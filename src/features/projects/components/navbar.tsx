@@ -33,12 +33,21 @@ const font = Poppins({
 })
 
 export const Navbar = ({
-  projectId
+  projectId,
 }: {
-  projectId: Id<"projects">;
+  //project id optional for non project pages
+  projectId?: Id<"projects">;
 }) => {
-  const project = useProject(projectId);
-  const renameProject = useRenameProject(projectId);
+  let project =null;
+  let renameProject =null;
+  if(projectId){
+   project = useProject(projectId);
+   renameProject = useRenameProject(projectId);
+  }
+  else{
+     project ="";
+     renameProject = "";
+  }
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [name, setName] = useState("");
@@ -102,6 +111,7 @@ export const Navbar = ({
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="ml-0! mr-1" />
+            {projectId && (
             <BreadcrumbItem>
               {isRenaming ? (
                 <input
@@ -123,31 +133,38 @@ export const Navbar = ({
                 </BreadcrumbPage>
               )}
             </BreadcrumbItem>
+            )}
+            
           </BreadcrumbList>
         </Breadcrumb>
-        {project?.importStatus === "importing" ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
-            </TooltipTrigger>
-            <TooltipContent>Importing...</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <CloudCheckIcon className="size-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent>
-              Saved{" "}
-              {project?.updatedAt 
-                ? formatDistanceToNow(
-                  project.updatedAt,
-                  { addSuffix: true, }
-                )
-                : "Loading..."}
-            </TooltipContent>
-          </Tooltip>
-        )}
+        {projectId && (  <>
+    
+
+    {project?.importStatus === "importing" ? (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
+        </TooltipTrigger>
+        <TooltipContent>Importing...</TooltipContent>
+      </Tooltip>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <CloudCheckIcon className="size-4 text-muted-foreground" />
+        </TooltipTrigger>
+        <TooltipContent>
+          Saved{" "}
+          {project?.updatedAt
+            ? formatDistanceToNow(project.updatedAt, { addSuffix: true })
+            : "Loading..."}
+        </TooltipContent>
+      </Tooltip>
+    )}
+  </>
+)}
+
+      
+        
       </div>
       <div className="flex items-center gap-2">
         <UserButton />

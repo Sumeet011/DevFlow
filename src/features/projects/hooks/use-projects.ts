@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/purity */
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -11,6 +11,10 @@ export const useProject = (projectId: Id<"projects">) => {
 
 export const useProjects = () => {
   return useQuery(api.projects.get);
+};
+
+export const useProjectsGithub = () => {
+  return useAction(api.projects.getByGithub);
 };
 
 export const useProjectsPartial = (limit: number) => {

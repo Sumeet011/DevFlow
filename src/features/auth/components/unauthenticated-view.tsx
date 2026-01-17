@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, User, Mail } from "lucide-react";
 import { useSignIn, SignUp, useSignUp, useAuth } from "@clerk/nextjs";
+import { toast } from "sonner";
 
 const UnAuthenticatedView = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("signup"); // "signup" | "signin"
+  const [isLoading, setIsLoading] = useState(false);
   
-const { signIn, isLoaded } = useSignIn();
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
 
   const steps = [
     { number: 1, label: "Sign up your account" },
@@ -16,23 +19,55 @@ const { signIn, isLoaded } = useSignIn();
     { number: 3, label: "Get Started With DevFlow" },
   ];
 
-  if (!isLoaded) return null;
+  if (!signInLoaded || !signUpLoaded) return null;
 
-  const handleGoogle = () => {
-  signIn.authenticateWithRedirect({
-    strategy: "oauth_google",
-    redirectUrl: "/sso-callback",
-    redirectUrlComplete: "/",
-  });
-};
+  const handleGoogle = async () => {
+    if (!signUp) {
+      console.error("SignUp not loaded");
+      toast.error("Authentication not ready. Please refresh the page.");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      console.log("Starting Google auth...");
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/",
+      });
+    } catch (error: any) {
+      console.error("Google auth error:", error);
+      toast.error(error?.errors?.[0]?.message || error?.message || "Failed to sign in with Google. Please try again.");
+      setIsLoading(false);
+    }
+  };
 
-const handleGithub = () => {
-  signIn.authenticateWithRedirect({
-    strategy: "oauth_github",
-    redirectUrl: "/sso-callback",
-    redirectUrlComplete: "/dashboard",
-  });
-};
+  const handleGithub = async () => {
+    if (!signUp) {
+      console.error("SignUp not loaded");
+      toast.error("Authentication not ready. Please refresh the page.");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      console.log("Starting GitHub auth...");
+      
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_github",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/",
+      });
+      
+      console.log("GitHub auth redirect initiated");
+    } catch (error: any) {
+      console.error("GitHub auth error:", error);
+      console.error("Error details:", error?.errors);
+      toast.error(error?.errors?.[0]?.message || error?.message || "Failed to sign in with GitHub. Please try again.");
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left Panel */}
@@ -92,37 +127,13 @@ const handleGithub = () => {
           {/* Social Buttons */}
 
           <div className="flex gap-4 mb-6">
-            <Button
-              onClick={handleGoogle}
-              variant="social"
-              size="full"
-              className="flex-1"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Google
-            </Button>
+            
             <Button
               onClick={handleGithub}
               variant="social"
               size="full"
               className="flex-1"
+              disabled={isLoading}
             >
               <svg
                 className="w-5 h-5 mr-2"

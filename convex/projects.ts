@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { verifyAuth } from "./auth";
 
 export const create = mutation({
@@ -66,6 +66,36 @@ export const getById = query({
     }
 
     return project;
+  },
+});
+
+
+
+export const getByGithub = action({
+  args: {
+    githubToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    
+    if (!identity) {
+      throw new Error("You must be signed in to import a project.");
+    }
+
+    // Fetch repos using the provided token
+    const res = await fetch("https://api.github.com/user/repos?per_page=100", {
+      headers: {
+        Authorization: `Bearer ${args.githubToken}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`GitHub API error: ${res.statusText}`);
+    }
+
+    const repos = await res.json();
+    return repos;
   },
 });
 
