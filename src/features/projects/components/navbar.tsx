@@ -38,15 +38,11 @@ export const Navbar = ({
   //project id optional for non project pages
   projectId?: Id<"projects">;
 }) => {
-  let project =null;
-  let renameProject =null;
+  let project: ReturnType<typeof useProject> | null = null;
+  let renameProject: ReturnType<typeof useRenameProject> | null = null;
   if(projectId){
    project = useProject(projectId);
-   renameProject = useRenameProject(projectId);
-  }
-  else{
-     project ="";
-     renameProject = "";
+   renameProject = useRenameProject();
   }
 
   const [isRenaming, setIsRenaming] = useState(false);
@@ -59,13 +55,13 @@ export const Navbar = ({
   };
 
   const handleSubmit = () => {
-    if (!project) return;
+    if (!project || !renameProject) return;
     setIsRenaming(false);
 
     const trimmedName = name.trim();
     if (!trimmedName || trimmedName === project.name) return;
 
-    renameProject({ id: projectId, name: trimmedName });
+    renameProject({ id: projectId!, name: trimmedName });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

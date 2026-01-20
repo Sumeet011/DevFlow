@@ -19,7 +19,7 @@ export const processMessage = inngest.createFunction(
     ],
     onFailure: async ({ event, step }) => {
       const { messageId } = event.data.event.data as MessageEvent;
-      const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
+      const internalKey = process.env.DEVFLOW_CONVEX_INTERNAL_KEY;
 
       // Update the message with error content
       if (internalKey) {
@@ -40,10 +40,10 @@ export const processMessage = inngest.createFunction(
   async ({ event, step }) => {
     const { messageId } = event.data as MessageEvent;
 
-    const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY; 
+    const internalKey = process.env.DEVFLOW_CONVEX_INTERNAL_KEY; 
 
     if (!internalKey) {
-      throw new NonRetriableError("POLARIS_CONVEX_INTERNAL_KEY is not configured");
+      throw new NonRetriableError("DEVFLOW_CONVEX_INTERNAL_KEY is not configured");
     }
 
     await step.sleep("wait-for-ai-processing", "5s");

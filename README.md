@@ -1,4 +1,4 @@
-# Polaris - Build a Cursor AI Alternative
+# DevFlow - Build a Cursor AI Alternative
 
 This is the repository for a comprehensive [YouTube tutorial series](https://youtu.be/Xf9rHPNBMyQ) where we build a **fully-featured cloud IDE** from scratch.
 
@@ -8,7 +8,7 @@ This is the repository for a comprehensive [YouTube tutorial series](https://you
 
 ## What We're Building
 
-Polaris is a browser-based IDE inspired by Cursor AI, featuring:
+DevFlow is a browser-based IDE inspired by Cursor AI, featuring:
 
 - Real-time collaborative code editing
 - AI-powered code suggestions and quick edit (Cmd+K)
@@ -78,8 +78,8 @@ Polaris is a browser-based IDE inspired by Cursor AI, featuring:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/code-with-antonio/polaris.git
-   cd polaris
+   git clone https://github.com/code-with-antonio/DevFlow.git
+   cd DevFlow
    ```
 
 2. Install dependencies:
@@ -104,7 +104,7 @@ Polaris is a browser-based IDE inspired by Cursor AI, featuring:
    # Convex
    NEXT_PUBLIC_CONVEX_URL=
    CONVEX_DEPLOYMENT=
-   POLARIS_CONVEX_INTERNAL_KEY=  # Generate a random string
+   DevFlow_CONVEX_INTERNAL_KEY=  # Generate a random string
 
    # AI Provider (choose one)
    ANTHROPIC_API_KEY=        # Preferred - Claude Sonnet 4

@@ -79,8 +79,8 @@ export const FileExplorer = ({
                 setIsOpen(true);
                 setCreating("file");
               }}
-              variant="highlight"
-              size="icon-xs"
+              variant="ghost"
+              size="icon"
             >
               <FilePlusCornerIcon className="size-3.5" />
             </Button>
@@ -91,8 +91,8 @@ export const FileExplorer = ({
                 setIsOpen(true);
                 setCreating("folder");
               }}
-              variant="highlight"
-              size="icon-xs"
+              variant="ghost"
+              size="icon"
             >
               <FolderPlusIcon className="size-3.5" />
             </Button>
@@ -102,8 +102,8 @@ export const FileExplorer = ({
                 e.preventDefault();
                 setCollapseKey((prev) => prev + 1);
               }}
-              variant="highlight"
-              size="icon-xs"
+              variant="ghost"
+              size="icon"
             >
               <CopyMinusIcon className="size-3.5" />
             </Button>

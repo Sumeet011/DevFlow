@@ -122,14 +122,14 @@ export const ConversationSidebar = ({
         </div>
         <div className="flex items-center px-1 gap-1">
           <Button
-            size="icon-xs"
-            variant="highlight"
+            size="icon"
+            variant="ghost"
           >
             <HistoryIcon className="size-3.5" />
           </Button>
           <Button
-            size="icon-xs"
-            variant="highlight"
+            size="icon"
+            variant="ghost"
             onClick={handleCreateConversation}
           >
             <PlusIcon className="size-3.5" />
@@ -180,7 +180,7 @@ export const ConversationSidebar = ({
         >
           <PromptInputBody>
             <PromptInputTextarea
-              placeholder="Ask Polaris anything..."
+              placeholder="Ask DevFlow anything..."
               onChange={(e) => setInput(e.target.value)}
               value={input}
               disabled={isProcessing}

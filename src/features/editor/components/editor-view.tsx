@@ -40,7 +40,7 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
           <div className="size-full flex items-center justify-center">
             <Image
               src="/logo.svg"
-              alt="Polaris"
+              alt="DevFlow Logo"
               width={50}
               height={50}
               className="opacity-25"
