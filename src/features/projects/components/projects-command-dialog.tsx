@@ -18,6 +18,15 @@ import { useProjects, useProjectsGithub, useDeleteProject } from "../hooks/use-p
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
 import {useImportGithubProject} from "../hooks/use-projects"
 
+// Add Clerk to the Window interface for TypeScript
+declare global {
+  interface Window {
+    Clerk?: {
+      openUserProfile: () => void;
+    };
+  }
+}
+
 interface ProjectsCommandDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
