@@ -99,20 +99,53 @@ export const getByGithub = action({
       throw new Error("You must be signed in to import a project.");
     }
 
-    // Fetch repos using the provided token
-    const res = await fetch("https://api.github.com/user/repos?per_page=100", {
-      headers: {
-        Authorization: `Bearer ${args.githubToken}`,
-        Accept: "application/vnd.github+json",
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`GitHub API error: ${res.statusText}`);
+    if (!args.githubToken) {
+      throw new Error("GitHub token is required");
     }
 
-    const repos = await res.json();
-    return repos;
+    try {
+      // First, validate the token by checking user info
+      const userRes = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${args.githubToken}`,
+          Accept: "application/vnd.github+json",
+        },
+      });
+
+      if (!userRes.ok) {
+        if (userRes.status === 401) {
+          throw new Error("GitHub token is invalid or expired. Please reconnect your GitHub account.");
+        }
+        throw new Error(`GitHub API error: ${userRes.status} ${userRes.statusText}`);
+      }
+
+      // Fetch repos using the provided token
+      const reposRes = await fetch("https://api.github.com/user/repos?per_page=100&sort=updated", {
+        headers: {
+          Authorization: `Bearer ${args.githubToken}`,
+          Accept: "application/vnd.github+json",
+        },
+      });
+
+      if (!reposRes.ok) {
+        if (reposRes.status === 401) {
+          throw new Error("GitHub token is invalid or expired. Please reconnect your GitHub account.");
+        }
+        throw new Error(`Failed to fetch repositories: ${reposRes.status} ${reposRes.statusText}`);
+      }
+
+      const repos = await reposRes.json();
+      
+      // Filter out repos the user can't access or are empty
+      const accessibleRepos = repos.filter((repo: any) => {
+        return repo.permissions?.pull !== false && repo.size > 0;
+      });
+
+      return accessibleRepos;
+    } catch (error) {
+      console.error("Error in getByGithub:", error);
+      throw error;
+    }
   },
 });
 
