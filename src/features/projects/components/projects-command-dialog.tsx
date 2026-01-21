@@ -64,13 +64,27 @@ export const ProjectsCommandDialog = ({
       fetch("/api/github-token")
         .then((res) => res.json())
         .then(async (data) => {
+          if (!data.token) {
+            console.error("No GitHub token received");
+            setGithubRepos([]);
+            return;
+          }
+          
           setGithubToken(data.token);
-          // Call the action with the token
-          const repos = await fetchGithubRepos({ githubToken: data.token });
-          setGithubRepos(repos || []);
+          
+          try {
+            // Call the action with the token
+            const repos = await fetchGithubRepos({ githubToken: data.token });
+            setGithubRepos(repos || []);
+          } catch (error) {
+            console.error("Error fetching GitHub repositories:", error);
+            setGithubRepos([]);
+            // Error will be handled by the hook
+          }
         })
         .catch((error) => {
-          //console.error("Error fetching GitHub data:", error);
+          console.error("Error fetching GitHub token:", error);
+          setGithubRepos([]);
         });
     }
   }, [open, method, fetchGithubRepos]);
@@ -148,8 +162,13 @@ export const ProjectsCommandDialog = ({
               <div className="flex flex-col items-center gap-2 py-6">
                 <FaGithub className="size-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {githubToken ? "Loading repositories..." : "Connecting to GitHub..."}
+                  {githubToken ? "No accessible repositories found" : "Connecting to GitHub..."}
                 </p>
+                {githubToken && (
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    Make sure your GitHub account has repositories and you've granted the necessary permissions.
+                  </p>
+                )}
               </div>
             </CommandEmpty>
           ) : (
@@ -170,7 +189,14 @@ export const ProjectsCommandDialog = ({
                     ) : (
                       <FaGithub className="size-4 text-muted-foreground" />
                     )}
-                    <span>{repo.full_name}</span>
+                    <div className="flex flex-col">
+                      <span>{repo.full_name}</span>
+                      {repo.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-xs">
+                          {repo.description}
+                        </span>
+                      )}
+                    </div>
                     {repo.private && (
                       <span className="ml-auto text-xs text-muted-foreground">Private</span>
                     )}
