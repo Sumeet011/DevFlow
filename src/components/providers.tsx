@@ -20,6 +20,10 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <ClerkProvider 
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      signInUrl="/"
+      signUpUrl="/"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
          <ThemeProvider

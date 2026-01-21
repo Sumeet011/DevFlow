@@ -41,6 +41,7 @@ export default defineSchema({
     projectId: v.id("projects"),
     title: v.string(),
     updatedAt: v.number(),
+    summary: v.optional(v.string()),
   }).index("by_project", ["projectId"]),
 
   messages: defineTable({

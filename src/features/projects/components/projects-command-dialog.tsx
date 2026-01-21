@@ -12,10 +12,20 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
 
 import { useProjects, useProjectsGithub, useDeleteProject } from "../hooks/use-projects";
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
 import {useImportGithubProject} from "../hooks/use-projects"
+
+// Add Clerk to the Window interface for TypeScript
+declare global {
+  interface Window {
+    Clerk?: {
+      openUserProfile: () => void;
+    };
+  }
+}
 
 interface ProjectsCommandDialogProps {
   open: boolean;
@@ -62,15 +72,37 @@ export const ProjectsCommandDialog = ({
   useEffect(() => {
     if (open && method === "github-import") {
       fetch("/api/github-token")
-        .then((res) => res.json())
+        .then((res) => {
+          return res.json();
+        })
         .then(async (data) => {
+          if (data.error) {
+            toast.error(data.error);
+            setGithubRepos([]);
+            return;
+          }
+          
+          if (!data.token) {
+            toast.error("GitHub not connected. Please reconnect your GitHub account.");
+            setGithubRepos([]);
+            return;
+          }
+          
           setGithubToken(data.token);
-          // Call the action with the token
-          const repos = await fetchGithubRepos({ githubToken: data.token });
-          setGithubRepos(repos || []);
+          
+          try {
+            // Call the action with the token
+            const repos = await fetchGithubRepos({ githubToken: data.token });
+            setGithubRepos(repos || []);
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to fetch GitHub repositories");
+            setGithubRepos([]);
+          }
         })
         .catch((error) => {
-          //console.error("Error fetching GitHub data:", error);
+          toast.error("Failed to connect to GitHub. Please try again.");
+          console.error("Error fetching GitHub token:", error);
+          setGithubRepos([]);
         });
     }
   }, [open, method, fetchGithubRepos]);
@@ -127,7 +159,6 @@ export const ProjectsCommandDialog = ({
       await deleteProject({ id: projectId });
       toast.success(`Project "${projectName}" deleted successfully`);
     } catch (error) {
-      //console.error("Error deleting project:", error);
       toast.error(error instanceof Error ? error.message : "Failed to delete project");
     }
   };
@@ -148,8 +179,27 @@ export const ProjectsCommandDialog = ({
               <div className="flex flex-col items-center gap-2 py-6">
                 <FaGithub className="size-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {githubToken ? "Loading repositories..." : "Connecting to GitHub..."}
+                  {githubToken ? "No accessible repositories found" : "Connecting to GitHub..."}
                 </p>
+                {githubToken && (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-xs text-muted-foreground text-center max-w-xs">
+                      Make sure your GitHub account has repositories and you've granted the necessary permissions.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Open Clerk user profile to manage connected accounts
+                        window.Clerk?.openUserProfile();
+                      }}
+                      className="mt-2"
+                    >
+                      <FaGithub className="size-4 mr-2" />
+                      Manage GitHub Connection
+                    </Button>
+                  </div>
+                )}
               </div>
             </CommandEmpty>
           ) : (
@@ -170,7 +220,14 @@ export const ProjectsCommandDialog = ({
                     ) : (
                       <FaGithub className="size-4 text-muted-foreground" />
                     )}
-                    <span>{repo.full_name}</span>
+                    <div className="flex flex-col">
+                      <span>{repo.full_name}</span>
+                      {repo.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-xs">
+                          {repo.description}
+                        </span>
+                      )}
+                    </div>
                     {repo.private && (
                       <span className="ml-auto text-xs text-muted-foreground">Private</span>
                     )}
