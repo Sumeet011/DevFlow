@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { env } from "process";
 
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.DEVFLOW_CONVEX_INTERNAL_KEY;
@@ -8,6 +9,7 @@ const validateInternalKey = (key: string) => {
   if (!internalKey) {
     throw new Error("DEVFLOW_CONVEX_INTERNAL_KEY is not configured");
   }
+  console.log("Validating internal key:", process.env.DEVFLOW_CONVEX_INTERNAL_KEY, key);
 
   if (key !== internalKey) {
     throw new Error("Invalid internal key");

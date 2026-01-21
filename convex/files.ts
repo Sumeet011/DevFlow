@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { verifyAuth } from "./auth";
 import { Doc, Id } from "./_generated/dataModel";
 
@@ -174,7 +174,7 @@ export const createFile = mutation({
 
     const now = Date.now();
 
-    await ctx.db.insert("files", {
+    const fileId = await ctx.db.insert("files", {
       projectId: args.projectId,
       name: args.name,
       content: args.content,
@@ -186,6 +186,8 @@ export const createFile = mutation({
     await ctx.db.patch("projects", args.projectId, {
       updatedAt: now,
     });
+
+    return fileId;
   },
 });
 
@@ -226,7 +228,7 @@ export const createFolder = mutation({
 
     const now = Date.now();
 
-    await ctx.db.insert("files", {
+    const folderId = await ctx.db.insert("files", {
       projectId: args.projectId,
       name: args.name,
       type: "folder",
@@ -237,6 +239,49 @@ export const createFolder = mutation({
     await ctx.db.patch("projects", args.projectId, {
       updatedAt: now,
     });
+
+    return folderId;
+  },
+});
+
+// Internal mutations for GitHub import (no auth, no duplicate checks for speed)
+export const createFileInternal = internalMutation({
+  args: { 
+    projectId: v.id("projects"),
+    parentId: v.optional(v.id("files")),
+    name: v.string(),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const fileId = await ctx.db.insert("files", {
+      projectId: args.projectId,
+      name: args.name,
+      content: args.content,
+      type: "file",
+      parentId: args.parentId,
+      updatedAt: Date.now(),
+    });
+
+    return fileId;
+  },
+});
+
+export const createFolderInternal = internalMutation({
+  args: { 
+    projectId: v.id("projects"),
+    parentId: v.optional(v.id("files")),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const folderId = await ctx.db.insert("files", {
+      projectId: args.projectId,
+      name: args.name,
+      type: "folder",
+      parentId: args.parentId,
+      updatedAt: Date.now(),
+    });
+
+    return folderId;
   },
 });
 
@@ -392,6 +437,20 @@ export const updateFile = mutation({
 
     await ctx.db.patch("projects", file.projectId, {
       updatedAt: now,
+    });
+  },
+});
+
+// Internal mutation for GitHub import (no auth check)
+export const updateFileContent = internalMutation({
+  args: {
+    id: v.id("files"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      content: args.content,
+      updatedAt: Date.now(),
     });
   },
 });

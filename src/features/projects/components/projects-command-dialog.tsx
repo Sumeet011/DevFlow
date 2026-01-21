@@ -1,9 +1,9 @@
 import { useRouter } from "next/navigation";
 import { FaGithub } from "react-icons/fa";
-import { AlertCircleIcon, GlobeIcon, Loader2Icon } from "lucide-react";
+import { AlertCircleIcon, GlobeIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-
+import { toast } from "sonner";
 import {
   CommandDialog,
   CommandEmpty,
@@ -13,8 +13,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-import { useProjects, useProjectsGithub } from "../hooks/use-projects";
-import { Doc } from "../../../../convex/_generated/dataModel";
+import { useProjects, useProjectsGithub, useDeleteProject } from "../hooks/use-projects";
+import { Doc, Id } from "../../../../convex/_generated/dataModel";
+import {useImportGithubProject} from "../hooks/use-projects"
 
 interface ProjectsCommandDialogProps {
   open: boolean;
@@ -51,8 +52,11 @@ export const ProjectsCommandDialog = ({
   const { getToken } = useAuth();
   const [githubToken, setGithubToken] = useState<string | undefined>();
   const [githubRepos, setGithubRepos] = useState<any[]>([]);
+  const [importingRepo, setImportingRepo] = useState<string | null>(null);
   
   const fetchGithubRepos = useProjectsGithub();
+  const importGithubProject = useImportGithubProject();
+  const deleteProject = useDeleteProject();
 
   // Fetch GitHub OAuth token when dialog opens for GitHub import
   useEffect(() => {
@@ -66,15 +70,66 @@ export const ProjectsCommandDialog = ({
           setGithubRepos(repos || []);
         })
         .catch((error) => {
-          console.error("Error fetching GitHub data:", error);
+          //console.error("Error fetching GitHub data:", error);
         });
     }
   }, [open, method, fetchGithubRepos]);
   
 
+  const handleImportGithubProject = async (repoFullName: string) => {
+    if (!githubToken) {
+      toast.error("No GitHub token available");
+      return;
+    }
+
+    if (importingRepo) {
+      toast.error("Already importing a repository");
+      return;
+    }
+
+    try {
+      setImportingRepo(repoFullName);
+      const toastId = toast.loading(`Importing ${repoFullName}...`);
+      
+
+      
+      const projectId = await importGithubProject({
+        githubToken,
+        projectimportId: repoFullName,
+      });
+
+
+      
+      toast.dismiss(toastId);
+      toast.success("Repository imported successfully!");
+
+      // Navigate to the new project
+      if (projectId) {
+        router.push(`/projects/${projectId}`);
+        onOpenChange(false);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to import repository");
+    } finally {
+      setImportingRepo(null);
+    }
+  };
+
   const handleSelect = (projectId: string) => {
     router.push(`/projects/${projectId}`);
     onOpenChange(false);
+  };
+
+  const handleDeleteProject = async (projectId: Id<"projects">, projectName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      await deleteProject({ id: projectId });
+      toast.success(`Project "${projectName}" deleted successfully`);
+    } catch (error) {
+      //console.error("Error deleting project:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete project");
+    }
   };
 
   // GitHub import view
@@ -99,18 +154,30 @@ export const ProjectsCommandDialog = ({
             </CommandEmpty>
           ) : (
             <CommandGroup heading="Your GitHub Repositories">
-              {githubRepos.map((repo: any) => (
-                <CommandItem
-                  key={repo.id}
-                  value={repo.full_name}
-                  onSelect={() => {
-                    // TODO: Import this repo
-                  }}
-                >
-                  <FaGithub className="size-4 text-muted-foreground" />
-                  <span>{repo.full_name}</span>
-                </CommandItem>
-              ))}
+              {githubRepos.map((repo: any) => {
+                const isImporting = importingRepo === repo.full_name;
+                
+                return (
+                  <CommandItem
+                    key={repo.id}
+                    value={repo.full_name}
+                    className='cursor-pointer'
+                    disabled={importingRepo !== null}
+                    onSelect={() => handleImportGithubProject(repo.full_name)}
+                  >
+                    {isImporting ? (
+                      <Loader2Icon className="size-4 text-muted-foreground animate-spin" />
+                    ) : (
+                      <FaGithub className="size-4 text-muted-foreground" />
+                    )}
+                    <span>{repo.full_name}</span>
+                    {repo.private && (
+                      <span className="ml-auto text-xs text-muted-foreground">Private</span>
+                    )}
+                    
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           )}
         </CommandList>
@@ -135,9 +202,17 @@ export const ProjectsCommandDialog = ({
               key={project._id}
               value={`${project.name}-${project._id}`}
               onSelect={() => handleSelect(project._id)}
+              className="group"
             >
               {getProjectIcon(project)}
               <span>{project.name}</span>
+              <button
+                onClick={(e) => handleDeleteProject(project._id, project.name, e)}
+                className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded"
+                title="Delete project"
+              >
+                <Trash2Icon className="size-4 text-destructive" />
+              </button>
             </CommandItem>
           ))}
         </CommandGroup>

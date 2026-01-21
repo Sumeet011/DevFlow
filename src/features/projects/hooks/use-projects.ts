@@ -17,6 +17,11 @@ export const useProjectsGithub = () => {
   return useAction(api.projects.getByGithub);
 };
 
+export const useImportGithubProject = () => {
+  return useAction(api.projects.importFromGithub);
+};
+
+
 export const useProjectsPartial = (limit: number) => {
   return useQuery(api.projects.getPartial, {
     limit,
@@ -78,6 +83,22 @@ export const useRenameProject = () => {
               ? { ...project, name: args.name, updatedAt: Date.now() }
               : project
           })
+        );
+      }
+    }
+  )
+};
+
+export const useDeleteProject = () => {
+  return useMutation(api.projects.deleteProject).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingProjects = localStore.getQuery(api.projects.get);
+
+      if (existingProjects !== undefined) {
+        localStore.setQuery(
+          api.projects.get,
+          {},
+          existingProjects.filter((project) => project._id !== args.id)
         );
       }
     }

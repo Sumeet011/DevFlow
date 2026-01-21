@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, User, Mail } from "lucide-react";
-import { useSignIn, SignUp, useSignUp, useAuth } from "@clerk/nextjs";
+import { useSignIn, SignUp, useSignUp, useAuth, useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 const UnAuthenticatedView = () => {
+  const { isSignedIn } = useUser();
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("signup"); // "signup" | "signin"
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +21,7 @@ const UnAuthenticatedView = () => {
   ];
 
   if (!signInLoaded || !signUpLoaded) return null;
+  if (isSignedIn) return null;
 
   const handleGoogle = async () => {
     if (!signUp) {
