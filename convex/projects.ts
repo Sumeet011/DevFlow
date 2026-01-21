@@ -103,8 +103,12 @@ export const getByGithub = action({
       throw new Error("GitHub token is required");
     }
 
+    console.log("getByGithub: Starting with token length:", args.githubToken.length);
+    console.log("getByGithub: Token starts with:", args.githubToken.substring(0, 10) + "...");
+
     try {
       // First, validate the token by checking user info
+      console.log("getByGithub: Validating token...");
       const userRes = await fetch("https://api.github.com/user", {
         headers: {
           Authorization: `Bearer ${args.githubToken}`,
@@ -113,13 +117,18 @@ export const getByGithub = action({
       });
 
       if (!userRes.ok) {
+        console.error("getByGithub: User validation failed:", userRes.status, userRes.statusText);
         if (userRes.status === 401) {
           throw new Error("GitHub token is invalid or expired. Please reconnect your GitHub account.");
         }
         throw new Error(`GitHub API error: ${userRes.status} ${userRes.statusText}`);
       }
 
+      const userData = await userRes.json();
+      console.log("getByGithub: Token validated for user:", userData.login);
+
       // Fetch repos using the provided token
+      console.log("getByGithub: Fetching repositories...");
       const reposRes = await fetch("https://api.github.com/user/repos?per_page=100&sort=updated", {
         headers: {
           Authorization: `Bearer ${args.githubToken}`,
@@ -128,6 +137,7 @@ export const getByGithub = action({
       });
 
       if (!reposRes.ok) {
+        console.error("getByGithub: Repos fetch failed:", reposRes.status, reposRes.statusText);
         if (reposRes.status === 401) {
           throw new Error("GitHub token is invalid or expired. Please reconnect your GitHub account.");
         }
@@ -135,12 +145,42 @@ export const getByGithub = action({
       }
 
       const repos = await reposRes.json();
+      console.log("getByGithub: Fetched", repos.length, "repositories");
+      
+      // Log some sample repos for debugging
+      if (repos.length > 0) {
+        console.log("getByGithub: Sample repo:", {
+          name: repos[0].name,
+          full_name: repos[0].full_name,
+          permissions: repos[0].permissions,
+          size: repos[0].size,
+          private: repos[0].private,
+        });
+      }
       
       // Filter out repos the user can't access or are empty
       const accessibleRepos = repos.filter((repo: any) => {
-        return repo.permissions?.pull !== false && repo.size > 0;
+        const hasPullPermission = repo.permissions?.pull !== false;
+        const hasSize = repo.size > 0;
+        const isAccessible = hasPullPermission && hasSize;
+        
+        if (!isAccessible) {
+          console.log(`getByGithub: Filtering out ${repo.full_name} - pull: ${hasPullPermission}, size: ${repo.size}`);
+        }
+        
+        return isAccessible;
       });
 
+      // If no repos pass the filter, return some repos anyway for debugging
+      if (accessibleRepos.length === 0 && repos.length > 0) {
+        console.log("getByGithub: No repos passed filter, returning first few for debugging");
+        return repos.slice(0, 5).map((repo: any) => ({
+          ...repo,
+          debug_info: `pull: ${repo.permissions?.pull}, size: ${repo.size}`
+        }));
+      }
+
+      console.log("getByGithub: Returning", accessibleRepos.length, "accessible repositories");
       return accessibleRepos;
     } catch (error) {
       console.error("Error in getByGithub:", error);

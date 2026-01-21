@@ -46,14 +46,12 @@ export const processMessage = inngest.createFunction(
       throw new NonRetriableError("DEVFLOW_CONVEX_INTERNAL_KEY is not configured");
     }
 
-    await step.sleep("wait-for-ai-processing", "5s");
-
-    await step.run("update-assistant-message", async () => {
-      await convex.mutation(api.system.updateMessageContent, {
+    // Process the message with Groq AI via Convex action
+    await step.run("process-with-groq", async () => {
+      await convex.action(api.system.processMessage, {
         internalKey,
         messageId,
-        content: "AI processed this message (TODO)"
-      })
+      });
     });
   }
 );

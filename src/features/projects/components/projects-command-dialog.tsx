@@ -12,6 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
 
 import { useProjects, useProjectsGithub, useDeleteProject } from "../hooks/use-projects";
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
@@ -61,11 +62,25 @@ export const ProjectsCommandDialog = ({
   // Fetch GitHub OAuth token when dialog opens for GitHub import
   useEffect(() => {
     if (open && method === "github-import") {
+      console.log("Fetching GitHub token...");
       fetch("/api/github-token")
-        .then((res) => res.json())
+        .then((res) => {
+          console.log("GitHub token API response:", res.status);
+          return res.json();
+        })
         .then(async (data) => {
+          console.log("GitHub token data:", data);
+          
+          if (data.error) {
+            console.error("GitHub token error:", data.error);
+            toast.error(data.error);
+            setGithubRepos([]);
+            return;
+          }
+          
           if (!data.token) {
             console.error("No GitHub token received");
+            toast.error("GitHub not connected. Please reconnect your GitHub account.");
             setGithubRepos([]);
             return;
           }
@@ -73,17 +88,20 @@ export const ProjectsCommandDialog = ({
           setGithubToken(data.token);
           
           try {
+            console.log("Calling fetchGithubRepos with token...");
             // Call the action with the token
             const repos = await fetchGithubRepos({ githubToken: data.token });
+            console.log("Received repos:", repos?.length || 0);
             setGithubRepos(repos || []);
           } catch (error) {
             console.error("Error fetching GitHub repositories:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to fetch GitHub repositories");
             setGithubRepos([]);
-            // Error will be handled by the hook
           }
         })
         .catch((error) => {
           console.error("Error fetching GitHub token:", error);
+          toast.error("Failed to connect to GitHub. Please try again.");
           setGithubRepos([]);
         });
     }
@@ -165,9 +183,23 @@ export const ProjectsCommandDialog = ({
                   {githubToken ? "No accessible repositories found" : "Connecting to GitHub..."}
                 </p>
                 {githubToken && (
-                  <p className="text-xs text-muted-foreground text-center max-w-xs">
-                    Make sure your GitHub account has repositories and you've granted the necessary permissions.
-                  </p>
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-xs text-muted-foreground text-center max-w-xs">
+                      Make sure your GitHub account has repositories and you've granted the necessary permissions.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Open Clerk user profile to manage connected accounts
+                        window.Clerk?.openUserProfile();
+                      }}
+                      className="mt-2"
+                    >
+                      <FaGithub className="size-4 mr-2" />
+                      Manage GitHub Connection
+                    </Button>
+                  </div>
                 )}
               </div>
             </CommandEmpty>
