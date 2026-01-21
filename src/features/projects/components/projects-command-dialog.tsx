@@ -75,6 +75,8 @@ export const ProjectsCommandDialog = ({
           
           if (!data.token) {
             toast.error("GitHub not connected. Please reconnect your GitHub account.");
+          if (!data.token) {
+            console.error("No GitHub token received");
             setGithubRepos([]);
             return;
           }
@@ -92,6 +94,13 @@ export const ProjectsCommandDialog = ({
         })
         .catch((error) => {
           toast.error("Failed to connect to GitHub. Please try again.");
+            console.error("Error fetching GitHub repositories:", error);
+            setGithubRepos([]);
+            // Error will be handled by the hook
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching GitHub token:", error);
           setGithubRepos([]);
         });
     }
@@ -189,6 +198,9 @@ export const ProjectsCommandDialog = ({
                       Manage GitHub Connection
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    Make sure your GitHub account has repositories and you've granted the necessary permissions.
+                  </p>
                 )}
               </div>
             </CommandEmpty>

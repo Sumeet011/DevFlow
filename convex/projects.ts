@@ -104,7 +104,9 @@ export const getByGithub = action({
     }
 
 
+   
     try {
+      // First, validate the token by checking user info
       const userRes = await fetch("https://api.github.com/user", {
         headers: {
           Authorization: `Bearer ${args.githubToken}`,
@@ -159,6 +161,12 @@ export const getByGithub = action({
           debug_info: `pull: ${repo.permissions?.pull}, size: ${repo.size}`
         }));
       }
+      
+      // Filter out repos the user can't access or are empty
+      const accessibleRepos = repos.filter((repo: any) => {
+        return repo.permissions?.pull !== false && repo.size > 0;
+      });
+
       return accessibleRepos;
     } catch (error) {
       console.error("Error in getByGithub:", error);
