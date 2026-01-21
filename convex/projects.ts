@@ -103,12 +103,8 @@ export const getByGithub = action({
       throw new Error("GitHub token is required");
     }
 
-    console.log("getByGithub: Starting with token length:", args.githubToken.length);
-    console.log("getByGithub: Token starts with:", args.githubToken.substring(0, 10) + "...");
 
     try {
-      // First, validate the token by checking user info
-      console.log("getByGithub: Validating token...");
       const userRes = await fetch("https://api.github.com/user", {
         headers: {
           Authorization: `Bearer ${args.githubToken}`,
@@ -125,10 +121,8 @@ export const getByGithub = action({
       }
 
       const userData = await userRes.json();
-      console.log("getByGithub: Token validated for user:", userData.login);
 
       // Fetch repos using the provided token
-      console.log("getByGithub: Fetching repositories...");
       const reposRes = await fetch("https://api.github.com/user/repos?per_page=100&sort=updated", {
         headers: {
           Authorization: `Bearer ${args.githubToken}`,
@@ -145,42 +139,26 @@ export const getByGithub = action({
       }
 
       const repos = await reposRes.json();
-      console.log("getByGithub: Fetched", repos.length, "repositories");
-      
-      // Log some sample repos for debugging
-      if (repos.length > 0) {
-        console.log("getByGithub: Sample repo:", {
-          name: repos[0].name,
-          full_name: repos[0].full_name,
-          permissions: repos[0].permissions,
-          size: repos[0].size,
-          private: repos[0].private,
-        });
-      }
+
       
       // Filter out repos the user can't access or are empty
       const accessibleRepos = repos.filter((repo: any) => {
         const hasPullPermission = repo.permissions?.pull !== false;
         const hasSize = repo.size > 0;
         const isAccessible = hasPullPermission && hasSize;
-        
-        if (!isAccessible) {
-          console.log(`getByGithub: Filtering out ${repo.full_name} - pull: ${hasPullPermission}, size: ${repo.size}`);
-        }
+
         
         return isAccessible;
       });
 
       // If no repos pass the filter, return some repos anyway for debugging
       if (accessibleRepos.length === 0 && repos.length > 0) {
-        console.log("getByGithub: No repos passed filter, returning first few for debugging");
+
         return repos.slice(0, 5).map((repo: any) => ({
           ...repo,
           debug_info: `pull: ${repo.permissions?.pull}, size: ${repo.size}`
         }));
       }
-
-      console.log("getByGithub: Returning", accessibleRepos.length, "accessible repositories");
       return accessibleRepos;
     } catch (error) {
       console.error("Error in getByGithub:", error);
@@ -242,7 +220,6 @@ export const importFromGithub = action({
       if (!treeRes.ok) throw new Error("Failed to fetch file tree");
 
       const tree = await treeRes.json();
-      //console.log(`Fetched tree with ${tree.tree?.length || 0} nodes`);
 
       // 4️⃣ Build folder hierarchy and file list
       const pathToIdMap = new Map<string, Id<"files">>();
@@ -267,8 +244,6 @@ export const importFromGithub = action({
           });
         }
       }
-
-      //console.log(`Found ${folders.length} folders and ${files.length} files`);
 
       // Sort folders by depth (parents first)
       folders.sort((a, b) => {
@@ -312,12 +287,8 @@ export const importFromGithub = action({
 
       // Insert files in batches of 10 (with content fetching)
       const BATCH_SIZE = 10;
-      //console.log(`Processing ${fileInsertions.length} files in batches of ${BATCH_SIZE}`);
-      
       for (let i = 0; i < fileInsertions.length; i += BATCH_SIZE) {
         const batch = fileInsertions.slice(i, i + BATCH_SIZE);
-        //console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(fileInsertions.length / BATCH_SIZE)}`);
-        
         await Promise.all(
           batch.map(async (file) => {
             let content = "";
@@ -325,7 +296,6 @@ export const importFromGithub = action({
             // Fetch content for small files immediately
             if (file.size < 100_000 && file.size > 0) {
               try {
-                //console.log(`Fetching content for: ${file.path} (${file.size} bytes)`);
                 
                 // Use the contents API instead of blob URL for more reliable fetching
                 const contentsUrl = `https://api.github.com/repos/${args.projectimportId}/contents/${file.path}`;
@@ -340,23 +310,15 @@ export const importFromGithub = action({
                     // Use atob instead of Buffer (which isn't available in Convex)
                     const base64Content = contentData.content.replace(/\n/g, "");
                     content = atob(base64Content);
-                    //console.log(`Successfully fetched content for ${file.path}: ${content.length} chars`);
                   } else if (contentData.content) {
                     content = contentData.content;
-                    //console.log(`Successfully fetched non-base64 content for ${file.path}: ${content.length} chars`);
                   } else {
                     //console.warn(`No content in response for ${file.path}`);
                   }
                 }
               } catch (error) {
-                //console.error(`Exception fetching content for ${file.path}:`, error);
-                // Continue with empty content
               }
-            } else if (file.size === 0) {
-              //console.log(`Skipping ${file.path}: empty file`);
-            } else {
-              //console.log(`Skipping ${file.path}: too large (${file.size} bytes)`);
-            }
+            } 
             
             const fileId = await ctx.runMutation(internal.files.createFileInternal, {
               projectId,

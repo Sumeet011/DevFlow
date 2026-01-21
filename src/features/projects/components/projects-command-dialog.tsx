@@ -62,24 +62,18 @@ export const ProjectsCommandDialog = ({
   // Fetch GitHub OAuth token when dialog opens for GitHub import
   useEffect(() => {
     if (open && method === "github-import") {
-      console.log("Fetching GitHub token...");
       fetch("/api/github-token")
         .then((res) => {
-          console.log("GitHub token API response:", res.status);
           return res.json();
         })
         .then(async (data) => {
-          console.log("GitHub token data:", data);
-          
           if (data.error) {
-            console.error("GitHub token error:", data.error);
             toast.error(data.error);
             setGithubRepos([]);
             return;
           }
           
           if (!data.token) {
-            console.error("No GitHub token received");
             toast.error("GitHub not connected. Please reconnect your GitHub account.");
             setGithubRepos([]);
             return;
@@ -88,19 +82,15 @@ export const ProjectsCommandDialog = ({
           setGithubToken(data.token);
           
           try {
-            console.log("Calling fetchGithubRepos with token...");
             // Call the action with the token
             const repos = await fetchGithubRepos({ githubToken: data.token });
-            console.log("Received repos:", repos?.length || 0);
             setGithubRepos(repos || []);
           } catch (error) {
-            console.error("Error fetching GitHub repositories:", error);
             toast.error(error instanceof Error ? error.message : "Failed to fetch GitHub repositories");
             setGithubRepos([]);
           }
         })
         .catch((error) => {
-          console.error("Error fetching GitHub token:", error);
           toast.error("Failed to connect to GitHub. Please try again.");
           setGithubRepos([]);
         });
@@ -159,7 +149,6 @@ export const ProjectsCommandDialog = ({
       await deleteProject({ id: projectId });
       toast.success(`Project "${projectName}" deleted successfully`);
     } catch (error) {
-      //console.error("Error deleting project:", error);
       toast.error(error instanceof Error ? error.message : "Failed to delete project");
     }
   };

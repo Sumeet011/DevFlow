@@ -10,7 +10,6 @@ const validateInternalKey = (key: string) => {
   if (!internalKey) {
     throw new Error("DEVFLOW_CONVEX_INTERNAL_KEY is not configured");
   }
-  console.log("Validating internal key:", process.env.DEVFLOW_CONVEX_INTERNAL_KEY, key);
 
   if (key !== internalKey) {
     throw new Error("Invalid internal key");
