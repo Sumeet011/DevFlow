@@ -142,30 +142,21 @@ export const getByGithub = action({
 
       const repos = await reposRes.json();
 
-      
       // Filter out repos the user can't access or are empty
       const accessibleRepos = repos.filter((repo: any) => {
         const hasPullPermission = repo.permissions?.pull !== false;
         const hasSize = repo.size > 0;
         const isAccessible = hasPullPermission && hasSize;
-
-        
         return isAccessible;
       });
 
       // If no repos pass the filter, return some repos anyway for debugging
       if (accessibleRepos.length === 0 && repos.length > 0) {
-
         return repos.slice(0, 5).map((repo: any) => ({
           ...repo,
           debug_info: `pull: ${repo.permissions?.pull}, size: ${repo.size}`
         }));
       }
-      
-      // Filter out repos the user can't access or are empty
-      const accessibleRepos = repos.filter((repo: any) => {
-        return repo.permissions?.pull !== false && repo.size > 0;
-      });
 
       return accessibleRepos;
     } catch (error) {
