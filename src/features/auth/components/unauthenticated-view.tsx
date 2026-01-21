@@ -24,20 +24,24 @@ const UnAuthenticatedView = () => {
   if (isSignedIn) return null;
 
   const handleGoogle = async () => {
-    if (!signUp) {
-      console.error("SignUp not loaded");
-      toast.error("Authentication not ready. Please refresh the page.");
-      return;
-    }
-    
     try {
       setIsLoading(true);
       console.log("Starting Google auth...");
-      await signUp.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/",
-      });
+      
+      // Try sign in first, if that fails, try sign up
+      if (signIn) {
+        await signIn.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      } else if (signUp) {
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      }
     } catch (error: any) {
       console.error("Google auth error:", error);
       toast.error(error?.errors?.[0]?.message || error?.message || "Failed to sign in with Google. Please try again.");
@@ -46,21 +50,24 @@ const UnAuthenticatedView = () => {
   };
 
   const handleGithub = async () => {
-    if (!signUp) {
-      console.error("SignUp not loaded");
-      toast.error("Authentication not ready. Please refresh the page.");
-      return;
-    }
-    
     try {
       setIsLoading(true);
       console.log("Starting GitHub auth...");
       
-      await signUp.authenticateWithRedirect({
-        strategy: "oauth_github",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/",
-      });
+      // Try sign in first, if that fails, try sign up
+      if (signIn) {
+        await signIn.authenticateWithRedirect({
+          strategy: "oauth_github",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      } else if (signUp) {
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_github",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/",
+        });
+      }
       
       console.log("GitHub auth redirect initiated");
     } catch (error: any) {
@@ -154,6 +161,9 @@ const UnAuthenticatedView = () => {
             <span className="text-muted-foreground text-sm">Or</span>
             <div className="flex-1 h-px bg-border" />
           </div>
+
+          {/* Clerk CAPTCHA element - required for bot protection */}
+          <div id="clerk-captcha" />
 
           {/* Form */}
           <form className="space-y-5">
